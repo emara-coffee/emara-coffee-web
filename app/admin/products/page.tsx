@@ -379,7 +379,7 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="p-6">
                       <div className="flex flex-col gap-1">
-                        <span className="font-black text-slate-900">₹{(product.basePrice || 0).toLocaleString()}</span>
+                        <span className="font-black text-slate-900">${(product.basePrice || 0).toLocaleString()}</span>
                         <span className={`text-xs font-bold ${product.stock > 10 ? 'text-emerald-600' : product.stock > 0 ? 'text-amber-600' : 'text-rose-600'}`}>
                           {product.stock} in stock
                         </span>
@@ -393,9 +393,9 @@ export default function AdminProductsPage() {
                         value={product.status}
                         onChange={(e) => handleProductStatusChange(product.id, e.target.value)}
                         className={`text-xs font-bold px-3 py-1.5 rounded-full outline-none cursor-pointer border ${product.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                            product.status === 'DISABLED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                              product.status === 'ARCHIVED' ? 'bg-slate-100 text-slate-600 border-slate-300' :
-                                'bg-rose-50 text-rose-700 border-rose-200'
+                          product.status === 'DISABLED' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                            product.status === 'ARCHIVED' ? 'bg-slate-100 text-slate-600 border-slate-300' :
+                              'bg-rose-50 text-rose-700 border-rose-200'
                           }`}
                       >
                         <option value="ACTIVE">ACTIVE</option>
@@ -528,7 +528,7 @@ export default function AdminProductsPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                           <div>
-                            <label className="block text-sm font-bold text-slate-700 mb-1">Base Price (₹)</label>
+                            <label className="block text-sm font-bold text-slate-700 mb-1">Base Price ($)</label>
                             <input required type="number" step="0.01" value={formData.basePrice} onChange={e => setFormData({ ...formData, basePrice: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none" />
                           </div>
                           <div>
@@ -713,8 +713,8 @@ export default function AdminProductsPage() {
                             <button
                               onClick={() => handleReviewStatusToggle(review.id, review.status)}
                               className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${review.status === 'ACTIVE'
-                                  ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                  : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
                                 }`}
                             >
                               {review.status}

@@ -149,8 +149,8 @@ export default function AdminDealerInventoryViewPage() {
                     </td>
                     <td className="p-6">
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${item.quantity > 10 ? 'bg-emerald-50 text-emerald-700' :
-                          item.quantity > 0 ? 'bg-amber-50 text-amber-700' :
-                            'bg-rose-50 text-rose-700'
+                        item.quantity > 0 ? 'bg-amber-50 text-amber-700' :
+                          'bg-rose-50 text-rose-700'
                         }`}>
                         {item.quantity} Units
                       </span>
@@ -188,7 +188,7 @@ export default function AdminDealerInventoryViewPage() {
                       {sale.invoiceReference && <p className="text-[10px] font-bold text-green-600 mt-1 uppercase tracking-wider">Ref: {sale.invoiceReference}</p>}
                     </td>
                     <td className="p-6 text-right">
-                      <p className="font-black text-slate-900 flex items-center justify-end gap-1"><DollarSign className="w-4 h-4 text-slate-400" /> ₹{sale.salePrice.toLocaleString()}</p>
+                      <p className="font-black text-slate-900 flex items-center justify-end gap-1"><DollarSign className="w-4 h-4 text-slate-400" /> ${sale.salePrice.toLocaleString()}</p>
                       <p className="text-xs font-bold text-slate-500 mt-1">Qty: {sale.quantitySold}</p>
                     </td>
                   </motion.tr>

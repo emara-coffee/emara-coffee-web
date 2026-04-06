@@ -107,7 +107,7 @@ export default function DealerProductDetailsPage() {
 
               <div className="mb-8">
                 <p className="text-[10px] uppercase font-bold text-slate-400 mb-2 tracking-wider">Wholesale Base Price</p>
-                <p className="text-5xl font-black text-slate-900">₹{product.basePrice.toLocaleString()}</p>
+                <p className="text-5xl font-black text-slate-900">${product.basePrice.toLocaleString()}</p>
               </div>
 
               <p className="text-slate-600 text-base leading-relaxed mb-10">{product.description}</p>

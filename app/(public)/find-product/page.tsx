@@ -37,14 +37,14 @@ interface Product {
 export default function FindYourProductPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  
+
   const [blueprintFields, setBlueprintFields] = useState<{ key: string; label: string; staticOptions: string[] }[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [selections, setSelections] = useState<Record<string, any>>({});
   const [currentOptions, setCurrentOptions] = useState<any[]>([]);
-  
+
   const [results, setResults] = useState<Product[] | null>(null);
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [isOptionsLoading, setIsOptionsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
@@ -70,9 +70,9 @@ export default function FindYourProductPage() {
     setSelections({});
     setCurrentStep(0);
     setResults(null);
-    
+
     let fields: { key: string; label: string; staticOptions: string[] }[] = [];
-    
+
     if (category.searchBlueprint && category.searchBlueprint.filters && Array.isArray(category.searchBlueprint.filters)) {
       fields = category.searchBlueprint.filters.map((f: SearchFilter) => ({
         key: f.key || f.label,
@@ -89,7 +89,7 @@ export default function FindYourProductPage() {
     }
 
     setBlueprintFields(fields);
-    
+
     if (fields.length > 0) {
       fetchOptions(category.id, {}, fields[0].key, fields);
     }
@@ -99,7 +99,7 @@ export default function FindYourProductPage() {
     try {
       setIsOptionsLoading(true);
       const res = await getDynamicOptions(categoryId, { currentSelections, nextField });
-      
+
       if (res.data && res.data.options && res.data.options.length > 0) {
         setCurrentOptions(res.data.options);
       } else {
@@ -167,7 +167,7 @@ export default function FindYourProductPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
-        
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-black text-stone-900 tracking-tight mb-4">
             Find Your <span className="text-green-600">Perfect Brew</span>
@@ -178,7 +178,7 @@ export default function FindYourProductPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          
+
           {!selectedCategory && (
             <motion.div
               key="category-selection"
@@ -226,7 +226,7 @@ export default function FindYourProductPage() {
               exit={{ opacity: 0, x: -20 }}
               className="max-w-3xl mx-auto"
             >
-              <button 
+              <button
                 onClick={goBack}
                 className="flex items-center gap-2 text-sm text-stone-500 hover:text-stone-900 mb-8 transition-colors"
               >
@@ -237,11 +237,10 @@ export default function FindYourProductPage() {
                 <div className="flex flex-wrap gap-2 mb-8">
                   {blueprintFields.map((field, idx) => (
                     <div key={field.key} className="flex items-center gap-2">
-                      <div className={`px-4 py-2 rounded-full text-sm font-medium border ${
-                        idx < currentStep ? 'bg-green-50 border-green-200 text-green-700' :
-                        idx === currentStep ? 'bg-green-600 border-green-600 text-white shadow-md' :
-                        'bg-stone-50 border-stone-100 text-stone-400'
-                      }`}>
+                      <div className={`px-4 py-2 rounded-full text-sm font-medium border ${idx < currentStep ? 'bg-green-50 border-green-200 text-green-700' :
+                          idx === currentStep ? 'bg-green-600 border-green-600 text-white shadow-md' :
+                            'bg-stone-50 border-stone-100 text-stone-400'
+                        }`}>
                         {idx < currentStep ? selections[field.key] : field.label}
                       </div>
                       {idx < blueprintFields.length - 1 && (
@@ -255,7 +254,7 @@ export default function FindYourProductPage() {
                   <h2 className="text-2xl font-bold text-stone-900 mb-6">
                     Select {blueprintFields[currentStep]?.label}
                   </h2>
-                  
+
                   {isOptionsLoading ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       {Array.from({ length: 6 }).map((_, i) => (
@@ -277,7 +276,7 @@ export default function FindYourProductPage() {
                   ) : (
                     <div className="text-center py-12 bg-stone-50 rounded-2xl border border-stone-100">
                       <p className="text-stone-500">No options found for this selection.</p>
-                      <button 
+                      <button
                         onClick={goBack}
                         className="mt-4 text-green-600 font-medium hover:underline"
                       >
@@ -299,7 +298,7 @@ export default function FindYourProductPage() {
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <button 
+                  <button
                     onClick={goBack}
                     className="flex items-center gap-2 text-sm text-stone-500 hover:text-stone-900 mb-2 transition-colors"
                   >
@@ -326,15 +325,15 @@ export default function FindYourProductPage() {
               ) : results && results.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {results.map((product) => (
-                    <Link 
-                      href={`/shop/${product.id}`} 
+                    <Link
+                      href={`/shop/${product.id}`}
                       key={product.id}
                       className="group bg-white rounded-3xl border border-stone-200 overflow-hidden shadow-sm hover:shadow-xl hover:border-green-300 transition-all duration-300 flex flex-col"
                     >
                       <div className="relative aspect-square bg-[#F9F7F2] p-6 overflow-hidden">
                         {product.images?.[0] ? (
-                          <Image 
-                            src={product.images[0]} 
+                          <Image
+                            src={product.images[0]}
                             alt={product.name}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -348,12 +347,12 @@ export default function FindYourProductPage() {
                           {product.sku}
                         </div>
                       </div>
-                      
+
                       <div className="p-5 flex-1 flex flex-col">
                         <h3 className="font-bold text-stone-900 text-lg leading-tight mb-2 group-hover:text-green-700 transition-colors">
                           {product.name}
                         </h3>
-                        
+
                         <div className="flex items-center gap-1.5 mb-4">
                           <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                           <span className="text-sm font-bold text-stone-700">{product.averageRating.toFixed(1)}</span>
@@ -363,10 +362,10 @@ export default function FindYourProductPage() {
                         <div className="mt-auto">
                           <div className="flex items-center justify-between mb-4">
                             <span className="text-2xl font-black text-stone-900">
-                              ₹{product.basePrice.toLocaleString()}
+                              ${product.basePrice.toLocaleString()}
                             </span>
                           </div>
-                          
+
                           <div className="pt-4 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500 font-medium">
                             <div className="flex items-center gap-1.5">
                               <MapPin className="w-3.5 h-3.5 text-green-600" />
@@ -388,7 +387,7 @@ export default function FindYourProductPage() {
                   <p className="text-stone-500 max-w-md mx-auto mb-8">
                     We couldn't find any coffee matching your exact specifications. Try adjusting your flavor profile or roast preferences.
                   </p>
-                  <button 
+                  <button
                     onClick={goBack}
                     className="bg-stone-900 text-white px-8 py-3 rounded-full font-medium hover:bg-stone-800 transition-colors"
                   >

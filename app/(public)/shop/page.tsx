@@ -92,7 +92,7 @@ export default function ShopPage() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium text-stone-700 block mb-2">Price Range (₹)</label>
+                  <label className="text-sm font-medium text-stone-700 block mb-2">Price Range ($)</label>
                   <div className="flex gap-2">
                     <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="Min" className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#4A7C59]/20 outline-none text-sm" />
                     <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Max" className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#4A7C59]/20 outline-none text-sm" />
@@ -177,7 +177,7 @@ export default function ShopPage() {
                         <div className="mt-auto flex items-end justify-between">
                           <div>
                             <p className="text-[10px] uppercase font-bold text-stone-400 mb-1 tracking-wider">Wholesale Base Price</p>
-                            <p className="text-2xl font-black text-stone-900">₹{product.basePrice.toLocaleString()}</p>
+                            <p className="text-2xl font-black text-stone-900">${product.basePrice.toLocaleString()}</p>
                           </div>
                         </div>
                       </div>

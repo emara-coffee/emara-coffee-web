@@ -137,7 +137,7 @@ export default function OrdersPage() {
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Total</p>
-                        <p className="text-sm font-bold text-slate-900">₹{(order.totalAmount || 0).toLocaleString()}</p>
+                        <p className="text-sm font-bold text-slate-900">${(order.totalAmount || 0).toLocaleString()}</p>
                       </div>
                       <div>
                         <p className="text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Status</p>
@@ -178,10 +178,10 @@ export default function OrdersPage() {
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-bold text-slate-900 truncate">{item.productName}</p>
                                     <p className="text-xs text-slate-500 mb-1">SKU: {item.productSku}</p>
-                                    <p className="text-xs font-medium text-slate-600">Qty: {item.quantity} × ₹{(item.price || 0).toLocaleString()}</p>
+                                    <p className="text-xs font-medium text-slate-600">Qty: {item.quantity} × ${(item.price || 0).toLocaleString()}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-sm font-black text-slate-900">₹{(item.quantity * (item.price || 0)).toLocaleString()}</p>
+                                    <p className="text-sm font-black text-slate-900">${(item.quantity * (item.price || 0)).toLocaleString()}</p>
                                   </div>
                                 </div>
                               ))}

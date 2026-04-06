@@ -155,7 +155,7 @@ export default function DealerShopPage() {
 
               <div className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium text-slate-700 block mb-2">Price Range (₹)</label>
+                  <label className="text-sm font-medium text-slate-700 block mb-2">Price Range ($)</label>
                   <div className="flex gap-2">
                     <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="Min" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 outline-none text-sm" />
                     <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Max" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 outline-none text-sm" />
@@ -240,7 +240,7 @@ export default function DealerShopPage() {
                           <div className="flex items-end justify-between">
                             <div>
                               <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-wider">Base Price</p>
-                              <p className="text-2xl font-black text-green-600">₹{product.basePrice.toLocaleString()}</p>
+                              <p className="text-2xl font-black text-green-600">${product.basePrice.toLocaleString()}</p>
                             </div>
                           </div>
                           <div className="flex gap-2">

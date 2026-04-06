@@ -126,7 +126,7 @@ export default function DealerCartPage() {
                 <div className="flex-1 text-center sm:text-left">
                   <div className="text-xs font-bold text-slate-400 mb-1 uppercase">SKU: {item.sku}</div>
                   <h3 className="text-lg font-bold text-slate-900 mb-2">{item.name}</h3>
-                  <div className="text-green-600 font-black">₹{(item.price || 0).toLocaleString()}</div>
+                  <div className="text-green-600 font-black">${(item.price || 0).toLocaleString()}</div>
                 </div>
 
                 <div className="flex flex-col items-center sm:items-end gap-4 sm:border-l border-slate-100 sm:pl-6">
@@ -135,7 +135,7 @@ export default function DealerCartPage() {
                     <span className="text-sm font-bold text-slate-700 w-6 text-center">{item.quantity}</span>
                     <button onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-green-500 hover:bg-white rounded-lg transition-colors"><Plus className="w-4 h-4" /></button>
                   </div>
-                  <div className="text-lg font-black text-slate-900">₹{((item.price || 0) * item.quantity).toLocaleString()}</div>
+                  <div className="text-lg font-black text-slate-900">${((item.price || 0) * item.quantity).toLocaleString()}</div>
                   <button onClick={() => handleRemove(item.id)} className="text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-1 text-sm font-bold"><Trash2 className="w-4 h-4" /> Remove</button>
                 </div>
               </div>
@@ -148,17 +148,17 @@ export default function DealerCartPage() {
               <div className="space-y-4 mb-6">
                 <div className="flex items-center justify-between text-slate-600">
                   <span className="font-medium">Subtotal ({items.length} items)</span>
-                  <span className="font-bold text-slate-900">₹{subtotal.toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">${subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex items-center justify-between text-slate-600">
                   <span className="font-medium">Tax (GST 18%)</span>
-                  <span className="font-bold text-slate-900">₹{(subtotal * 0.18).toLocaleString()}</span>
+                  <span className="font-bold text-slate-900">${(subtotal * 0.18).toLocaleString()}</span>
                 </div>
               </div>
               <div className="border-t border-slate-100 pt-6 mb-8">
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-bold text-slate-900">Estimated Total</span>
-                  <span className="text-2xl font-black text-green-600">₹{(subtotal * 1.18).toLocaleString()}</span>
+                  <span className="text-2xl font-black text-green-600">${(subtotal * 1.18).toLocaleString()}</span>
                 </div>
               </div>
               <Link href="/dealer/products/checkout" className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white px-8 py-4 rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/20">

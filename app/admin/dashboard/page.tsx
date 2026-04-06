@@ -5,7 +5,7 @@ import { IndianRupee, Users, PackageOpen, TrendingUp, AlertTriangle } from 'luci
 
 export default function AdminDashboardPage() {
   const stats = [
-    { label: 'Total Revenue', value: '₹42,50,000', icon: IndianRupee, color: 'text-green-600', bg: 'bg-green-100' },
+    { label: 'Total Revenue', value: '$42,50,000', icon: IndianRupee, color: 'text-green-600', bg: 'bg-green-100' },
     { label: 'Active Dealers', value: '124', icon: Users, color: 'text-green-600', bg: 'bg-green-100' },
     { label: 'Pending Orders', value: '18', icon: PackageOpen, color: 'text-orange-600', bg: 'bg-orange-100' },
     { label: 'Low Stock Items', value: '5', icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-100' },
@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
                 <tr className="border-b border-gray-50 last:border-0">
                   <td className="py-4 font-mono text-gray-900">#ORD-0921</td>
                   <td className="py-4 text-gray-600">Apex Auto Parts</td>
-                  <td className="py-4 font-medium text-gray-900">₹1,24,000</td>
+                  <td className="py-4 font-medium text-gray-900">$1,24,000</td>
                   <td className="py-4">
                     <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded text-xs font-semibold">Processing</span>
                   </td>
@@ -74,7 +74,7 @@ export default function AdminDashboardPage() {
                 <tr className="border-b border-gray-50 last:border-0">
                   <td className="py-4 font-mono text-gray-900">#ORD-0920</td>
                   <td className="py-4 text-gray-600">Kolkata Tyre Hub</td>
-                  <td className="py-4 font-medium text-gray-900">₹85,500</td>
+                  <td className="py-4 font-medium text-gray-900">$85,500</td>
                   <td className="py-4">
                     <span className="bg-green-50 text-green-600 px-2 py-1 rounded text-xs font-semibold">Shipped</span>
                   </td>
@@ -83,7 +83,7 @@ export default function AdminDashboardPage() {
                 <tr className="border-b border-gray-50 last:border-0">
                   <td className="py-4 font-mono text-gray-900">#ORD-0919</td>
                   <td className="py-4 text-gray-600">Eastern Power Solutions</td>
-                  <td className="py-4 font-medium text-gray-900">₹3,10,000</td>
+                  <td className="py-4 font-medium text-gray-900">$3,10,000</td>
                   <td className="py-4">
                     <span className="bg-green-50 text-green-600 px-2 py-1 rounded text-xs font-semibold">Delivered</span>
                   </td>

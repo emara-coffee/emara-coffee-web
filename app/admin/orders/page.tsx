@@ -251,11 +251,11 @@ export default function AdminOrdersPage() {
                       )}
                     </td>
                     <td className="p-6">
-                      <p className="font-black text-slate-900">₹{order.totalAmount.toLocaleString()}</p>
+                      <p className="font-black text-slate-900">${order.totalAmount.toLocaleString()}</p>
                       <span className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold inline-flex items-center gap-1 ${order.paymentStatus === 'SUCCESS' ? 'bg-emerald-50 text-emerald-700' :
-                          order.paymentStatus === 'FAILED' ? 'bg-rose-50 text-rose-700' :
-                            order.paymentStatus === 'REFUNDED' ? 'bg-amber-50 text-amber-700' :
-                              'bg-slate-100 text-slate-600'
+                        order.paymentStatus === 'FAILED' ? 'bg-rose-50 text-rose-700' :
+                          order.paymentStatus === 'REFUNDED' ? 'bg-amber-50 text-amber-700' :
+                            'bg-slate-100 text-slate-600'
                         }`}>
                         <CreditCard className="w-3 h-3" />
                         {order.paymentStatus}
@@ -269,9 +269,9 @@ export default function AdminOrdersPage() {
                     </td>
                     <td className="p-6">
                       <span className={`px-3 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${order.refundStatus === 'NONE' ? 'bg-slate-100 text-slate-500' :
-                          order.refundStatus === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
-                            order.refundStatus === 'FAILED' ? 'bg-rose-50 text-rose-700' :
-                              'bg-amber-50 text-amber-700'
+                        order.refundStatus === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
+                          order.refundStatus === 'FAILED' ? 'bg-rose-50 text-rose-700' :
+                            'bg-amber-50 text-amber-700'
                         }`}>
                         {order.refundStatus !== 'NONE' && <RotateCcw className="w-3.5 h-3.5" />}
                         {order.refundStatus}

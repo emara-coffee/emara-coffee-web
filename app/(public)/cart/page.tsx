@@ -155,7 +155,7 @@ export default function CartPage() {
                       {item.name}
                     </h3>
                     <div className="text-green-600 font-bold">
-                      ₹{(item.price || 0).toLocaleString()}
+                      ${(item.price || 0).toLocaleString()}
                     </div>
                     {item.stock < 10 && (
                       <div className="text-xs font-medium text-rose-500 mt-2">
@@ -185,7 +185,7 @@ export default function CartPage() {
                     </div>
 
                     <div className="text-lg font-black text-slate-900">
-                      ₹{((item.price || 0) * item.quantity).toLocaleString()}
+                      ${((item.price || 0) * item.quantity).toLocaleString()}
                     </div>
 
                     <button
@@ -206,11 +206,11 @@ export default function CartPage() {
                 <div className="space-y-4 mb-6">
                   <div className="flex items-center justify-between text-slate-600">
                     <span>Subtotal ({items.length} items)</span>
-                    <span className="font-semibold text-slate-900">₹{subtotal.toLocaleString()}</span>
+                    <span className="font-semibold text-slate-900">${subtotal.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
                     <span>Tax (GST 18%)</span>
-                    <span className="font-semibold text-slate-900">₹{(subtotal * 0.18).toLocaleString()}</span>
+                    <span className="font-semibold text-slate-900">${(subtotal * 0.18).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between text-slate-600">
                     <span>Shipping</span>
@@ -221,7 +221,7 @@ export default function CartPage() {
                 <div className="border-t border-slate-100 pt-6 mb-8">
                   <div className="flex items-center justify-between">
                     <span className="text-lg font-bold text-slate-900">Estimated Total</span>
-                    <span className="text-2xl font-black text-slate-900">₹{(subtotal * 1.18).toLocaleString()}</span>
+                    <span className="text-2xl font-black text-slate-900">${(subtotal * 1.18).toLocaleString()}</span>
                   </div>
                 </div>
 

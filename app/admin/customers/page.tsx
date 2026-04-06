@@ -250,8 +250,8 @@ export default function AdminCustomersPage() {
                     </td>
                     <td className="p-6">
                       <span className={`px-3 py-1.5 rounded-full text-xs font-bold inline-flex items-center gap-1.5 ${user.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' :
-                          user.status === 'BLOCKED' ? 'bg-rose-50 text-rose-700' :
-                            'bg-amber-50 text-amber-700'
+                        user.status === 'BLOCKED' ? 'bg-rose-50 text-rose-700' :
+                          'bg-amber-50 text-amber-700'
                         }`}>
                         {user.status === 'ACTIVE' ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                         {user.status}
@@ -372,7 +372,7 @@ export default function AdminCustomersPage() {
                       </div>
                       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                         <p className="text-sm font-bold text-slate-500 mb-1 uppercase tracking-wider">Lifetime Value</p>
-                        <p className="text-3xl font-black text-green-600">₹{(userDetails.stats.totalSpent || 0).toLocaleString()}</p>
+                        <p className="text-3xl font-black text-green-600">${(userDetails.stats.totalSpent || 0).toLocaleString()}</p>
                       </div>
                     </div>
 
