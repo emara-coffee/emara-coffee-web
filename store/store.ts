@@ -1,43 +1,32 @@
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
-import {
-  persistStore,
-  persistReducer,
-  FLUSH,
-  REHYDRATE,
-  PAUSE,
-  PERSIST,
-  PURGE,
-  REGISTER,
-} from 'redux-persist';
-import authReducer from './slices/authSlice';
+import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist';
 import createWebStorage from 'redux-persist/lib/storage/createWebStorage';
+import authReducer from './slices/authSlice';
+import cartReducer from './slices/cartSlice';
+import chatReducer from './slices/chatSlice';
 
-// Create a dummy storage for Next.js SSR
+// Fallback for Next.js SSR
 const createNoopStorage = () => {
   return {
-    getItem(_key: string) {
-      return Promise.resolve(null);
-    },
-    setItem(_key: string, value: any) {
-      return Promise.resolve(value);
-    },
-    removeItem(_key: string) {
-      return Promise.resolve();
-    },
+    getItem(_key: string) { return Promise.resolve(null); },
+    setItem(_key: string, value: any) { return Promise.resolve(value); },
+    removeItem(_key: string) { return Promise.resolve(); },
   };
 };
 
 const storage = typeof window !== 'undefined' ? createWebStorage('local') : createNoopStorage();
 
 const persistConfig = {
-  key: 'emara-root',
+  key: 'root',
   version: 1,
   storage,
-  whitelist: ['auth'],
+  whitelist: ['auth', 'cart'], // Only persist these
 };
 
 const rootReducer = combineReducers({
   auth: authReducer,
+  cart: cartReducer,
+  chat: chatReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

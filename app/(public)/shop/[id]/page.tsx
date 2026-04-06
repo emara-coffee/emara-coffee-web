@@ -1,70 +1,65 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, use } from 'react';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Star, Minus, Plus, ShoppingCart, Loader2, User } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '@/store/store';
-import { getProductById } from '@/api/products';
-import { addToCart } from '@/api/cart';
-import { getProductReviews, addReview, addReviewComment } from '@/api/reviews';
+import { setCart } from '@/store/slices/cartSlice';
+import { getProductDetails } from '@/api/public/catalog';
+import { addToCart, getMyCart } from '@/api/shared/cart';
+import { submitProductReview } from '@/api/user/productReviews';
+import { Loader2, Star, ShoppingCart, ShieldCheck, MapPin, MessageSquareText, Send } from 'lucide-react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  
+export default function ProductDetailsPage() {
+  const { id } = useParams();
   const router = useRouter();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
 
   const [product, setProduct] = useState<any>(null);
-  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMsg, setCartMsg] = useState('');
 
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
-  const fetchData = useCallback(async () => {
+  const fetchProduct = async () => {
     try {
-      const productData = await getProductById(id);
-      setProduct(productData);
-      if (productData.images?.length > 0) {
-        setActiveImage(productData.images[0]);
-      }
-
-      try {
-        const reviewsData = await getProductReviews(id);
-        setReviews(reviewsData);
-      } catch (revError) {
-        console.error("Reviews failed to load", revError);
-        setReviews([]); 
-      }
+      const { data } = await getProductDetails(id as string);
+      setProduct(data);
     } catch (error) {
-      console.error('Failed to fetch product:', error);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  };
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (id) fetchProduct();
+  }, [id]);
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      router.push('/login');
+      setCartMsg('Please login to add items to cart.');
       return;
     }
     setAddingToCart(true);
+    setCartMsg('');
     try {
-      await addToCart({ productId: id, quantity });
-      router.push('/cart');
-    } catch (error) {
-      console.error(error);
+      await addToCart({ productId: product.id, quantity });
+
+      const cartRes = await getMyCart();
+      const items = Array.isArray(cartRes.data) ? cartRes.data : cartRes.data?.items || [];
+      dispatch(setCart(items));
+
+      setCartMsg('Added to cart successfully!');
+      setTimeout(() => setCartMsg(''), 3000);
+    } catch (err: any) {
+      setCartMsg(err.response?.data?.message || 'Failed to add to cart');
     } finally {
       setAddingToCart(false);
     }
@@ -72,229 +67,187 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
+    if (!isAuthenticated) return router.push('/login');
+    if (!reviewText.trim()) return;
+
     setSubmittingReview(true);
     try {
-      await addReview({ productId: id, rating: reviewRating, text: reviewText });
+      await submitProductReview({ productId: product.id, rating: reviewRating, comment: reviewText });
       setReviewText('');
       setReviewRating(5);
-      fetchData();
-    } catch (error) {
-      console.error(error);
+      await fetchProduct();
+      alert('Review submitted successfully!');
+    } catch (error: any) {
+      alert(error.response?.data?.message || 'Failed to submit review.');
     } finally {
       setSubmittingReview(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center bg-[#FAF8F5]">
-        <Loader2 className="w-12 h-12 animate-spin text-[#4A7C59]" />
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center flex-col bg-[#FAF8F5]">
-        <h2 className="text-3xl font-bold text-[#3E200C] mb-4">Product not found</h2>
-        <button onClick={() => router.push('/shop')} className="text-[#4A7C59] hover:underline font-semibold">
-          Return to Shop
-        </button>
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-stone-50"><Loader2 className="h-8 w-8 animate-spin text-[#4A7C59]" /></div>;
+  if (!product) return <div className="min-h-screen flex items-center justify-center bg-stone-50 text-xl font-bold text-stone-700">Product not found.</div>;
 
   return (
-    <div className="bg-[#FAF8F5] min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20 mb-20 bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-gray-100">
-          {/* Image Gallery */}
-          <div className="flex flex-col gap-6">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="relative w-full aspect-square rounded-2xl overflow-hidden bg-gray-50"
-            >
-              <Image
-                src={activeImage || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=800&auto=format&fit=crop'}
-                alt={product.name}
-                fill
-                sizes="(max-width: 768px) 100vw, 50vw"
-                className="object-cover"
-                priority
-              />
-            </motion.div>
-            {product.images?.length > 1 && (
-              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                {product.images.map((img: string, idx: number) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveImage(img)}
-                    className={`relative w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${
-                      activeImage === img ? 'border-[#4A7C59] opacity-100 shadow-md' : 'border-transparent opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    <Image src={img} alt={`Thumbnail ${idx}`} fill sizes="96px" className="object-cover" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+    <div className="min-h-screen bg-stone-50 relative pb-20">
+      <div className="absolute inset-0 z-0 h-[40vh] w-full bg-[linear-gradient(to_right,#8B451315_1px,transparent_1px),linear-gradient(to_bottom,#8B451315_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
 
-          {/* Product Info */}
-          <div className="flex flex-col justify-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex items-center gap-3 mb-6">
-                <span className="bg-green-50 text-[#4A7C59] px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase border border-green-100">
-                  {product.category}
-                </span>
-                <span className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase ${product.stock > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'}`}>
-                  {product.stock > 0 ? 'In Stock' : 'Out of Stock'}
-                </span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-12">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-3xl shadow-sm border border-stone-100 overflow-hidden mb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+            <div className="bg-white aspect-square p-12 flex items-center justify-center relative">
+              <img src={product.images?.[0] || '/logo.svg'} alt={product.name} className="max-w-full max-h-full object-contain drop-shadow-2xl" />
+            </div>
+
+            <div className="p-10 lg:p-14 flex flex-col justify-center border-l border-stone-50">
+              <div className="mb-4 flex flex-col items-start gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 bg-[#4A7C59]/10 text-[#4A7C59] text-[10px] font-black rounded-full tracking-wider uppercase">{product.categoryName}</span>
+                  <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">SKU: {product.sku}</span>
+                </div>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold text-[#3E200C] mb-4 leading-tight">
-                {product.name}
-              </h1>
+
+              <h1 className="text-4xl font-black text-stone-900 leading-tight mb-4">{product.name}</h1>
+
               <div className="flex items-center gap-2 mb-8">
-                <div className="flex text-[#4A7C59]">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-current" />
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star key={star} className={`h-5 w-5 ${star <= Math.round(product.averageRating) ? 'fill-amber-400 text-amber-400' : 'text-stone-200 fill-stone-200'}`} />
                   ))}
                 </div>
-                <span className="text-sm font-semibold text-gray-500 hover:text-[#4A7C59] cursor-pointer transition-colors">
-                  ({reviews.length} customer reviews)
-                </span>
+                <span className="text-lg font-bold text-stone-800 ml-1">{product.averageRating.toFixed(1)}</span>
+                <span className="text-sm font-medium text-stone-400">({product.reviewCount} verified reviews)</span>
               </div>
-              <p className="text-4xl font-bold text-[#3E200C] mb-8">
-                ${parseFloat(product.price).toFixed(2)}
-              </p>
-              <p className="text-lg text-gray-600 leading-relaxed mb-10">
-                {product.description}
-              </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-6 mb-10 pt-8 border-t border-gray-100">
-                <div className="flex items-center bg-gray-50 border border-gray-200 rounded-full p-1.5 w-full sm:w-auto">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white hover:shadow-sm transition-all text-gray-600 hover:text-[#3E200C]"
-                    disabled={product.stock === 0}
-                  >
-                    <Minus className="w-5 h-5" />
-                  </button>
-                  <span className="w-16 text-center font-bold text-xl text-[#3E200C]">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                    className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-white hover:shadow-sm transition-all text-gray-600 hover:text-[#3E200C]"
-                    disabled={product.stock === 0}
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
+              <div className="mb-8">
+                <p className="text-[10px] uppercase font-bold text-stone-400 mb-2 tracking-wider">Wholesale Base Price</p>
+                <p className="text-5xl font-black text-stone-900">₹{product.basePrice.toLocaleString()}</p>
+              </div>
+
+              <p className="text-stone-600 text-base leading-relaxed mb-10">{product.description}</p>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-4">
+                <div className="flex items-center border border-stone-200 rounded-2xl bg-white w-full sm:w-32 shadow-sm">
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-4 py-3 text-stone-400 hover:text-stone-900 font-bold text-xl transition-colors">-</button>
+                  <input type="text" value={quantity} readOnly className="w-full text-center bg-transparent font-bold text-stone-900 outline-none" />
+                  <button onClick={() => setQuantity(quantity + 1)} className="px-4 py-3 text-stone-400 hover:text-stone-900 font-bold text-xl transition-colors">+</button>
                 </div>
-
                 <button
-                  onClick={handleAddToCart}
-                  disabled={product.stock === 0 || addingToCart}
-                  className="flex-1 w-full bg-[#4A7C59] text-white py-4 px-8 rounded-full font-bold text-lg flex items-center justify-center gap-3 hover:bg-[#3A5A40] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                  onClick={handleAddToCart} disabled={addingToCart}
+                  className="flex-1 flex justify-center items-center gap-2 py-4 px-8 rounded-2xl font-bold text-white bg-[#4A7C59] hover:bg-[#3d664a] transition-colors disabled:opacity-50 shadow-sm"
                 >
-                  {addingToCart ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    <>
-                      <ShoppingCart className="w-6 h-6" /> Add to Cart
-                    </>
-                  )}
+                  {addingToCart ? <Loader2 className="animate-spin h-5 w-5" /> : <ShoppingCart className="h-5 w-5" />}
+                  Add to Cart
                 </button>
               </div>
-            </motion.div>
+              {cartMsg && <p className={`text-sm font-medium ${cartMsg.includes('success') ? 'text-emerald-600' : 'text-rose-600'}`}>{cartMsg}</p>}
+            </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Reviews Section */}
-        <div className="pt-12">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl font-bold text-[#3E200C] mb-12 text-center">Customer Reviews</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-white rounded-3xl p-10 border border-stone-100 shadow-sm">
+              <h3 className="text-2xl font-bold text-stone-900 mb-6">Technical Specifications</h3>
+              {product.compatibilities ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.entries(product.compatibilities).map(([key, value]) => (
+                    <div key={key} className="p-5 rounded-2xl bg-stone-50 border border-stone-100">
+                      <p className="text-xs font-bold text-stone-400 mb-1 uppercase tracking-wider">{key}</p>
+                      <p className="font-bold text-stone-900">{String(value)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-stone-500 font-medium">No specific compatibilities listed.</p>
+              )}
+            </motion.div>
 
-            {isAuthenticated ? (
-              <form onSubmit={handleReviewSubmit} className="bg-white p-8 md:p-10 rounded-3xl mb-12 border border-gray-100 shadow-sm">
-                <h3 className="text-2xl font-bold text-[#3E200C] mb-8">Write a Review</h3>
-                <div className="mb-8">
-                  <label className="block text-sm font-semibold text-gray-700 mb-4">Overall Rating</label>
-                  <div className="flex gap-2">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-3xl p-10 border border-stone-100 shadow-sm">
+              <h3 className="text-2xl font-bold text-stone-900 mb-8">Customer Reviews</h3>
+
+              {(!user || user.role === 'USER') && (
+                <form onSubmit={handleReviewSubmit} className="mb-12 bg-stone-50 p-6 rounded-2xl border border-stone-100">
+                  <h4 className="font-bold text-stone-900 mb-4">Write a Review</h4>
+                  <div className="flex items-center gap-2 mb-4">
                     {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        type="button"
-                        key={star}
-                        onClick={() => setReviewRating(star)}
-                        className="focus:outline-none transition-transform hover:scale-110"
-                      >
-                        <Star className={`w-10 h-10 ${reviewRating >= star ? 'fill-[#4A7C59] text-[#4A7C59]' : 'text-gray-200'}`} />
+                      <button type="button" key={star} onClick={() => setReviewRating(star)} className="focus:outline-none transition-transform hover:scale-110">
+                        <Star className={`h-8 w-8 ${star <= reviewRating ? 'fill-amber-400 text-amber-400' : 'text-stone-300'}`} />
                       </button>
                     ))}
                   </div>
-                </div>
-                <div className="mb-8">
-                  <label className="block text-sm font-semibold text-gray-700 mb-4">Your Experience</label>
-                  <textarea
-                    required
-                    rows={4}
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                    className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/30 focus:border-[#4A7C59] transition-all resize-none"
-                    placeholder="Share your thoughts about this coffee..."
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={submittingReview}
-                  className="bg-[#3E200C] text-white px-10 py-4 rounded-full font-bold hover:bg-[#4A7C59] transition-colors disabled:opacity-50 flex items-center justify-center min-w-[200px]"
-                >
-                  {submittingReview ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Post Review'}
-                </button>
-              </form>
-            ) : (
-              <div className="text-center bg-white p-10 rounded-3xl border border-gray-100 shadow-sm mb-12">
-                <p className="text-gray-600 mb-6 text-lg">Please log in to share your thoughts about this blend.</p>
-                <button onClick={() => router.push('/login')} className="bg-[#4A7C59] text-white px-8 py-3 rounded-full font-bold hover:bg-[#3A5A40] transition-colors">
-                  Log In to Review
-                </button>
-              </div>
-            )}
+                  <div className="relative">
+                    <textarea
+                      required
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      placeholder={isAuthenticated ? "Share your experience with this product..." : "Please log in to write a review"}
+                      disabled={!isAuthenticated || submittingReview}
+                      className="w-full px-5 py-4 bg-white border border-stone-200 rounded-2xl focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] outline-none resize-none min-h-[120px] transition-colors disabled:bg-stone-50 text-sm"
+                    />
+                    <button type="submit" disabled={!isAuthenticated || submittingReview || !reviewText.trim()} className="absolute bottom-4 right-4 p-3 bg-[#4A7C59] text-white rounded-xl hover:bg-[#3d664a] disabled:opacity-50 transition-colors shadow-sm">
+                      {submittingReview ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </form>
+              )}
 
-            <div className="space-y-6">
-              {reviews.length === 0 ? (
-                <p className="text-center text-gray-500 text-lg py-12 bg-white rounded-3xl border border-gray-100">No reviews yet. Be the first to review this coffee!</p>
-              ) : (
-                reviews.map((review: any) => (
-                  <div key={review.id} className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-[#4A7C59]">
-                          <User className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#3E200C] text-lg">{review.user.firstName} {review.user.lastName}</p>
-                          <div className="flex gap-1 mt-1 text-[#4A7C59]">
+              <div className="space-y-6">
+                {product.reviews && product.reviews.length > 0 ? (
+                  product.reviews.map((review: any) => (
+                    <div key={review.id} className="pb-6 border-b border-stone-100 last:border-0 last:pb-0">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-stone-900">{review.userEmail?.split('@')[0] || 'Verified Buyer'}</span>
+                          <div className="flex">
                             {[...Array(5)].map((_, i) => (
-                              <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-current' : 'text-gray-200'}`} />
+                              <Star key={i} className={`h-3.5 w-3.5 ${i < review.rating ? 'fill-amber-400 text-amber-400' : 'text-stone-200'}`} />
                             ))}
                           </div>
                         </div>
+                        <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">{new Date(review.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <span className="text-sm text-gray-400 font-medium">
-                        {new Date(review.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                      </span>
+                      <p className="text-stone-600 leading-relaxed text-sm mt-3">{review.comment}</p>
                     </div>
-                    <p className="text-gray-600 leading-relaxed text-lg">{review.text}</p>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <MessageSquareText className="h-12 w-12 text-stone-200 mx-auto mb-3" />
+                    <p className="text-stone-500 font-medium">No reviews yet. Be the first to review this product!</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-[#3E200C] rounded-3xl p-8 shadow-sm text-white h-fit sticky top-28">
+            <div className="flex items-center gap-3 mb-6">
+              <ShieldCheck className="h-8 w-8 text-[#4A7C59]" />
+              <h3 className="text-xl font-bold">Authorized Dealers</h3>
+            </div>
+            <p className="text-stone-300 text-sm mb-6 leading-relaxed">Purchase directly or get support from our certified partners in your region.</p>
+
+            <div className="space-y-4">
+              {product.authorizedDealers && product.authorizedDealers.length > 0 ? (
+                product.authorizedDealers.map((dealer: any) => (
+                  <div key={dealer.id} className="p-5 rounded-2xl bg-[#4F2D18]/50 border border-[#5A351D] hover:border-[#4A7C59] transition-colors">
+                    <h4 className="font-bold text-white mb-2">{dealer.businessName}</h4>
+                    <div className="flex items-center gap-2 text-stone-300 text-sm mb-4">
+                      <MapPin className="h-4 w-4 text-[#4A7C59]" /> {dealer.city}, {dealer.state}
+                    </div>
+                    <Link href={`/dealer-profile/${dealer.id}`} className="w-full py-2.5 bg-white/10 hover:bg-[#4A7C59] text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2">
+                      <MessageSquareText className="h-4 w-4" /> View Profile & Contact
+                    </Link>
                   </div>
                 ))
+              ) : (
+                <div className="text-center p-6 bg-[#4F2D18]/50 rounded-2xl border border-[#5A351D]">
+                  <p className="text-stone-300 text-sm font-medium leading-relaxed">No localized dealers available for this product yet. Please purchase directly.</p>
+                </div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
+
       </div>
     </div>
   );

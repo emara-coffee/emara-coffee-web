@@ -1,221 +1,184 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { browseProducts, getCategories } from '@/api/public/catalog';
+import { Search, SlidersHorizontal, Loader2, Star, PackageX } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Star, ChevronLeft, ChevronRight, Loader2, ShoppingCart } from 'lucide-react';
-import { getProducts } from '@/api/products';
-import { addToCart } from '@/api/cart';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function ShopPage() {
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit] = useState(9);
-  
+  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [categoryId, setCategoryId] = useState('');
+  const [minRating, setMinRating] = useState<number>(0);
 
-  const [addingToCart, setAddingToCart] = useState<string | null>(null);
+  useEffect(() => {
+    const fetchCats = async () => {
+      try {
+        const { data } = await getCategories();
+        setCategories(data);
+      } catch (error) { }
+    };
+    fetchCats();
+  }, []);
 
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const router = useRouter();
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
 
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = async () => {
     setLoading(true);
     try {
-      const params: any = { page, limit };
-      if (search) params.search = search;
-      if (category) params.category = category;
+      const params: any = { page, limit: 12 };
+      if (debouncedSearch) params.search = debouncedSearch;
       if (minPrice) params.minPrice = minPrice;
       if (maxPrice) params.maxPrice = maxPrice;
+      if (categoryId) params.categoryId = categoryId;
+      if (minRating > 0) params.minRating = minRating;
 
-      const data = await getProducts(params);
+      const { data } = await browseProducts(params);
       setProducts(data.data);
-      setTotal(data.total);
+      setTotalPages(data.meta.totalPages);
     } catch (error) {
-      console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [page, limit, search, category, minPrice, maxPrice]);
+  };
 
   useEffect(() => {
     fetchProducts();
-  }, [fetchProducts]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    fetchProducts();
-  };
-
-  const handleAddToCart = async (productId: string) => {
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-    setAddingToCart(productId);
-    try {
-      await addToCart({ productId, quantity: 1 });
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setAddingToCart(null);
-    }
-  };
-
-  const totalPages = Math.ceil(total / limit);
-
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-  };
+  }, [page, debouncedSearch, minPrice, maxPrice, categoryId, minRating]);
 
   return (
-    <div className="w-full bg-[#FAF8F5] min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b border-gray-200 pb-8 gap-6">
+    <div className="min-h-screen bg-stone-50 relative overflow-hidden pb-20">
+      <div className="absolute inset-0 z-0 h-[60vh] w-full bg-[linear-gradient(to_right,#8B451315_1px,transparent_1px),linear-gradient(to_bottom,#8B451315_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-[#3E200C] mb-4">Our Coffees</h1>
-            <p className="text-gray-600 max-w-xl text-lg">
-              Explore our curated selection of premium African beans. Use the filters to find the perfect roast and flavor profile for your daily cup.
-            </p>
+            <h1 className="text-4xl font-extrabold text-stone-900 tracking-tight">Product Catalog</h1>
+            <p className="text-stone-500 mt-2">Browse premium green beans and roasted coffee.</p>
           </div>
-          
-          <form onSubmit={handleSearchSubmit} className="w-full md:w-auto relative flex items-center shadow-sm rounded-full">
+          <div className="w-full md:w-96 relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" />
             <input
               type="text"
-              placeholder="Search beans..."
+              placeholder="Search by name, SKU, or category..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full md:w-80 pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#4A7C59] focus:border-transparent transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-white border border-stone-200 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] transition-colors outline-none"
             />
-            <Search className="absolute left-4 w-5 h-5 text-gray-400" />
-            <button type="submit" className="hidden" />
-          </form>
+          </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-10">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 flex-shrink-0">
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm sticky top-28">
-              <div className="flex items-center gap-2 mb-6 text-[#3E200C] font-bold">
-                <Filter className="w-5 h-5" />
-                <h3 className="text-lg">Filters</h3>
+        <div className="flex flex-col lg:flex-row gap-8">
+          <div className="w-full lg:w-64 flex-shrink-0 space-y-6">
+            <div className="bg-white p-6 rounded-3xl shadow-sm border border-stone-100">
+              <div className="flex items-center gap-2 mb-6">
+                <SlidersHorizontal className="h-5 w-5 text-[#4A7C59]" />
+                <h3 className="font-bold text-stone-900">Filters</h3>
               </div>
 
-              <div className="mb-8">
-                <h4 className="font-semibold text-[#3E200C] mb-4 text-sm uppercase tracking-wider">Category</h4>
-                <div className="space-y-3">
-                  {['', 'Light Roast', 'Medium Roast', 'Dark Roast', 'Special Reserve'].map((cat) => (
-                    <label key={cat || 'all'} className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="radio"
-                        name="category"
-                        checked={category === cat}
-                        onChange={() => { setCategory(cat); setPage(1); }}
-                        className="w-4 h-4 text-[#4A7C59] focus:ring-[#4A7C59] border-gray-300 cursor-pointer"
-                      />
-                      <span className={`text-sm transition-colors ${category === cat ? 'font-bold text-[#4A7C59]' : 'text-gray-600 group-hover:text-[#4A7C59]'}`}>
-                        {cat || 'All Coffees'}
-                      </span>
-                    </label>
-                  ))}
+              <div className="space-y-6">
+                <div>
+                  <label className="text-sm font-medium text-stone-700 block mb-2">Price Range (₹)</label>
+                  <div className="flex gap-2">
+                    <input type="number" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} placeholder="Min" className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#4A7C59]/20 outline-none text-sm" />
+                    <input type="number" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} placeholder="Max" className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#4A7C59]/20 outline-none text-sm" />
+                  </div>
                 </div>
-              </div>
 
-              <div>
-                <h4 className="font-semibold text-[#3E200C] mb-4 text-sm uppercase tracking-wider">Price Range</h4>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    value={minPrice}
-                    onChange={(e) => { setMinPrice(e.target.value); setPage(1); }}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] transition-all bg-gray-50 hover:bg-white"
-                  />
-                  <span className="text-gray-400">-</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    value={maxPrice}
-                    onChange={(e) => { setMaxPrice(e.target.value); setPage(1); }}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4A7C59]/20 focus:border-[#4A7C59] transition-all bg-gray-50 hover:bg-white"
-                  />
+                <div>
+                  <label className="text-sm font-medium text-stone-700 block mb-2">Category</label>
+                  <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-[#4A7C59]/20 outline-none text-sm text-stone-700">
+                    <option value="">All Categories</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-stone-700 block mb-2">Minimum Rating</label>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => setMinRating(minRating === star ? 0 : star)}
+                        className="focus:outline-none transition-transform hover:scale-110"
+                      >
+                        <Star className={`h-6 w-6 ${star <= minRating ? 'fill-amber-400 text-amber-400' : 'text-stone-300'}`} />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </aside>
+          </div>
 
-          {/* Product Grid */}
           <div className="flex-1">
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-100 shadow-sm">
-                <Loader2 className="w-10 h-10 animate-spin text-[#4A7C59] mb-4" />
-                <p className="text-gray-500 font-medium">Brewing up results...</p>
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-[#4A7C59]" />
               </div>
             ) : products.length === 0 ? (
-              <div className="bg-white rounded-2xl p-16 text-center border border-gray-100 shadow-sm">
-                <p className="text-2xl font-bold text-[#3E200C] mb-3">No coffees found</p>
-                <p className="text-gray-500 mb-6">Try adjusting your filters or search terms to find what you're looking for.</p>
-                <button
-                  onClick={() => { setSearch(''); setCategory(''); setMinPrice(''); setMaxPrice(''); setPage(1); }}
-                  className="px-6 py-2 bg-[#4A7C59] text-white rounded-full font-semibold hover:bg-[#3A5A40] transition-colors"
-                >
-                  Clear all filters
-                </button>
+              <div className="bg-white rounded-3xl border border-stone-100 p-12 text-center flex flex-col items-center shadow-sm">
+                <PackageX className="h-16 w-16 text-stone-300 mb-4" />
+                <h3 className="text-xl font-bold text-stone-900">No products found</h3>
+                <p className="text-stone-500 mt-2">Try adjusting your search or filters.</p>
               </div>
             ) : (
               <>
-                <motion.div 
+                <motion.div
                   initial="hidden"
                   animate="visible"
-                  variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                  variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                  className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
                 >
                   {products.map((product) => (
-                    <motion.div key={product.id} variants={fadeInUp} className="group flex flex-col h-full bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300">
-                      <Link href={`/shop/${product.id}`} className="block relative h-64 w-full rounded-xl overflow-hidden mb-5 bg-gray-50">
-                        <Image
-                          src={product.images[0] || 'https://images.unsplash.com/photo-1559525839-b184a4d698c7?q=80&w=800&auto=format&fit=crop'}
+                    <motion.div
+                      key={product.id}
+                      variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                      className="bg-white rounded-3xl border border-stone-100 shadow-sm overflow-hidden hover:shadow-lg transition-all group flex flex-col"
+                    >
+                      <Link href={`/shop/${product.id}`} className="block relative aspect-square bg-white overflow-hidden p-6">
+                        <img
+                          src={product.images?.[0] || '/logo.svg'}
                           alt={product.name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                          className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-[#4A7C59] shadow-sm">
-                          {product.category}
+                        <div className="absolute top-4 right-4 bg-[#4A7C59]/10 px-3 py-1 rounded-full text-[10px] font-bold text-[#4A7C59] uppercase tracking-wide">
+                          {product.categoryName}
                         </div>
                       </Link>
-                      <div className="flex flex-col flex-1 px-2 pb-2">
-                        <Link href={`/shop/${product.id}`} className="hover:text-[#4A7C59] transition-colors">
-                          <h3 className="text-xl font-bold text-[#3E200C] mb-2 line-clamp-1">{product.name}</h3>
+                      <div className="p-6 flex flex-col flex-1 border-t border-stone-50">
+                        <p className="text-[10px] font-bold text-stone-400 mb-2 uppercase tracking-wider">SKU: {product.sku}</p>
+                        <Link href={`/shop/${product.id}`}>
+                          <h3 className="text-lg font-bold text-stone-900 leading-tight mb-2 hover:text-[#4A7C59] transition-colors line-clamp-2">
+                            {product.name}
+                          </h3>
                         </Link>
-                        <div className="flex items-center gap-1 mb-3 text-[#4A7C59]">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className="w-4 h-4 fill-current" />
-                          ))}
-                          <span className="text-sm font-semibold text-gray-700 ml-1">4.8</span>
+                        <div className="flex items-center gap-1.5 mb-4">
+                          <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                          <span className="text-sm font-bold text-stone-700">{product.averageRating.toFixed(1)}</span>
+                          <span className="text-xs text-stone-400 font-medium">({product.reviewCount} verified reviews)</span>
                         </div>
-                        <p className="text-sm text-gray-500 mb-6 line-clamp-2 flex-1">{product.description}</p>
-                        <div className="flex items-center justify-between mt-auto pt-4 border-t border-gray-50">
-                          <span className="text-2xl font-bold text-[#3E200C]">${parseFloat(product.price).toFixed(2)}</span>
-                          <button 
-                            onClick={() => handleAddToCart(product.id)}
-                            disabled={addingToCart === product.id || product.stock === 0}
-                            className="flex items-center justify-center w-12 h-12 bg-green-50 text-[#4A7C59] rounded-full hover:bg-[#4A7C59] hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                            aria-label="Add to cart"
-                          >
-                            {addingToCart === product.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
-                          </button>
+                        <div className="mt-auto flex items-end justify-between">
+                          <div>
+                            <p className="text-[10px] uppercase font-bold text-stone-400 mb-1 tracking-wider">Wholesale Base Price</p>
+                            <p className="text-2xl font-black text-stone-900">₹{product.basePrice.toLocaleString()}</p>
+                          </div>
                         </div>
                       </div>
                     </motion.div>
@@ -223,35 +186,19 @@ export default function ShopPage() {
                 </motion.div>
 
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-16">
+                  <div className="flex justify-center items-center gap-4 mt-12">
                     <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="p-2 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                      className="px-6 py-3 rounded-xl font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-50 transition-colors"
                     >
-                      <ChevronLeft className="w-5 h-5" />
+                      Previous
                     </button>
-                    
-                    {[...Array(totalPages)].map((_, i) => (
-                      <button
-                        key={i + 1}
-                        onClick={() => setPage(i + 1)}
-                        className={`w-10 h-10 rounded-full font-semibold transition-colors ${
-                          page === i + 1
-                            ? 'bg-[#4A7C59] text-white shadow-md'
-                            : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    ))}
-
+                    <span className="font-semibold text-stone-700">Page {page} of {totalPages}</span>
                     <button
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="p-2 rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                      className="px-6 py-3 rounded-xl font-medium border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 disabled:opacity-50 transition-colors"
                     >
-                      <ChevronRight className="w-5 h-5" />
+                      Next
                     </button>
                   </div>
                 )}

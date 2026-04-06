@@ -1,204 +1,212 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useDispatch } from 'react-redux';
-import { motion } from 'framer-motion';
-import { Mail, Lock, KeyRound, ArrowRight, Loader2 } from 'lucide-react';
-import { requestOtp, loginUser } from '@/api/auth';
+import { useDispatch, useSelector } from 'react-redux';
+import { login, verifyOTP, resendOTP } from '@/api/auth/auth';
 import { setCredentials } from '@/store/slices/authSlice';
+import { RootState } from '@/store/store';
+import { Loader2, Mail, Lock, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
+
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [countdown, setCountdown] = useState(60);
+
   const router = useRouter();
   const dispatch = useDispatch();
-  
-  const [step, setStep] = useState<1 | 2>(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    otp: '',
-  });
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    
-    try {
-      await requestOtp({ email: formData.email });
-      setStep(2);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to send OTP. Please try again.');
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'ADMIN') router.replace('/admin/categories');
+      else if (user.role === 'DEALER') router.replace('/dealer/products');
+      else router.replace('/shop');
     }
-  };
+  }, [isAuthenticated, user, router]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (step === 'otp' && countdown > 0) {
+      timer = setInterval(() => setCountdown((prev) => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [step, countdown]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
-    
+    setError('');
+    setMessage('');
+
     try {
-      const response = await loginUser(formData);
-      dispatch(setCredentials({
-        user: response.user,
-        token: response.token,
-      }));
-      
-      if (response.user.role === 'admin') {
-        router.push('/admin');
+      const { data } = await login({ email, password });
+
+      if (data.token && data.user) {
+        dispatch(setCredentials({ user: data.user, token: data.token }));
+
+        if (data.user.role === 'ADMIN') router.push('/admin/categories');
+        else if (data.user.role === 'DEALER') router.push('/dealer/products');
+        else router.push('/shop');
       } else {
-        router.push('/shop');
+        setStep('otp');
+        setCountdown(60);
+
+        setLoading(false);
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Invalid credentials or OTP.');
-    } finally {
+      setError(err.response?.data?.message || 'Invalid credentials');
+
       setLoading(false);
+    }
+
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const { data } = await verifyOTP({ email, otp, type: 'LOGIN' });
+
+      dispatch(setCredentials({ user: data.user, token: data.token }));
+
+
+      if (data.user.role === 'ADMIN') router.push('/admin/dashboard');
+      else if (data.user.role === 'DEALER') router.push('/dealer/dashboard');
+      else router.push('/shop');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Invalid or expired OTP');
+      setLoading(false);
+    }
+
+  };
+
+  const handleResendOTP = async () => {
+    setResendLoading(true);
+    setError('');
+    setMessage('');
+    try {
+      await resendOTP({ email, type: 'LOGIN' });
+      setMessage('A new OTP has been sent to your email.');
+      setCountdown(60);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to resend OTP');
+    } finally {
+      setResendLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-[url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center relative">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      
-      <div className="relative sm:mx-auto sm:w-full sm:max-w-md z-10">
-        <Link href="/" className="flex justify-center items-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-[#E67E22] rounded-full flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-lg">EC</span>
-          </div>
-          <span className="font-bold text-3xl text-white tracking-tight">
-            EMARA
-          </span>
-        </Link>
-        
-        <div className="bg-white py-8 px-4 shadow-2xl sm:rounded-2xl sm:px-10 border border-gray-100">
-          <h2 className="text-center text-2xl font-bold text-[#2B160A] mb-8">
-            {step === 1 ? 'Welcome back' : 'Verify your identity'}
-          </h2>
+    <div className="min-h-screen bg-white flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative overflow-hidden">
+      <div className="absolute inset-0 z-0 h-[60vh] w-full bg-[linear-gradient(to_right,#0ea5e915_1px,transparent_1px),linear-gradient(to_bottom,#0ea5e915_1px,transparent_1px)] bg-[size:2rem_2rem] [mask-image:linear-gradient(to_bottom,white,transparent)]" />
 
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-md">
-              <p className="text-sm text-red-700 font-medium">{error}</p>
-            </div>
-          )}
+      <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="flex justify-center">
+          <Image src="/logo.svg" alt="Emara Coffee" width={64} height={64} className="h-16 w-auto" />
+        </div>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">Welcome back</h2>
+        <p className="mt-2 text-center text-sm text-slate-500">Sign in to manage your account</p>
+      </div>
 
-          <form onSubmit={step === 1 ? handleRequestOtp : handleLogin} className="space-y-6">
-            {step === 1 && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="space-y-6"
-              >
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
+        <div className="bg-white/80 backdrop-blur-xl py-8 px-4 shadow-2xl shadow-green-900/5 sm:rounded-3xl sm:px-10 border border-slate-100">
+
+          {error && <div className="mb-4 bg-red-50 text-red-600 p-3 rounded-xl text-sm border border-red-100">{error}</div>}
+          {message && <div className="mb-4 bg-emerald-50 text-emerald-700 p-3 rounded-xl text-sm border border-emerald-100">{message}</div>}
+
+          <AnimatePresence mode="wait">
+            {step === 'credentials' ? (
+              <motion.form key="credentials" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, x: -20 }} className="space-y-5" onSubmit={handleLogin}>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email address
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    </div>
+                  <label className="block text-sm font-medium text-slate-700">Email address</label>
+                  <div className="mt-1 relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-[#E67E22] focus:border-[#E67E22] sm:text-sm transition-colors"
-                      placeholder="you@example.com"
+                      type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 block w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors sm:text-sm outline-none"
+                      placeholder="you@company.com"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Password
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
+                  <label className="block text-sm font-medium text-slate-700">Password</label>
+                  <div className="mt-1 relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <input
-                      type="password"
-                      required
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-[#E67E22] focus:border-[#E67E22] sm:text-sm transition-colors"
+                      type={showPassword ? "text" : "password"} required value={password} onChange={(e) => setPassword(e.target.value)}
+                      className="pl-10 pr-10 block w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-colors sm:text-sm outline-none"
                       placeholder="••••••••"
                     />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
                   </div>
                 </div>
-              </motion.div>
-            )}
 
-            {step === 2 && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  One-Time Password (OTP)
-                </label>
-                <p className="text-xs text-gray-500 mb-4">
-                  We've sent a 6-digit code to <span className="font-semibold text-[#E67E22]">{formData.email}</span>
-                </p>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound className="h-5 w-5 text-gray-400" />
+                <div className="flex items-center justify-between mt-2">
+                  <div className="text-sm">
+                    <a href="#" className="font-medium text-green-600 hover:text-green-500 transition-colors">Forgot your password?</a>
                   </div>
+                </div>
+
+                <button type="submit" disabled={loading} className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors disabled:opacity-50">
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Sign In'}
+                </button>
+              </motion.form>
+            ) : (
+              <motion.form key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6" onSubmit={handleVerifyOTP}>
+                <div className="text-center">
+                  <label className="block text-sm font-semibold text-slate-900">Security Check</label>
+                  <p className="text-sm text-slate-500 mt-1 mb-4">We sent a verification code to <br /><span className="font-medium text-slate-700">{email}</span></p>
                   <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={formData.otp}
-                    onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-[#E67E22] focus:border-[#E67E22] sm:text-sm transition-colors text-center tracking-widest font-bold text-lg"
-                    placeholder="000000"
+                    type="text" required value={otp} onChange={(e) => setOtp(e.target.value)} maxLength={6}
+                    className="block w-full px-4 py-4 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-center tracking-[0.75em] font-bold text-2xl text-slate-900 outline-none transition-colors"
+                    placeholder="------"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="mt-4 text-sm text-gray-500 hover:text-[#E67E22] font-medium transition-colors"
-                >
-                  ← Back to login details
+
+                <button type="submit" disabled={loading || otp.length < 6} className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-700 transition-colors disabled:opacity-50">
+                  {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Verify & Secure Login'}
                 </button>
-              </motion.div>
+
+                <div className="flex flex-col items-center justify-center pt-2 space-y-3">
+                  {countdown > 0 ? (
+                    <p className="text-sm text-slate-500">Resend code in <span className="font-semibold text-slate-900">{countdown}s</span></p>
+                  ) : (
+                    <button type="button" onClick={handleResendOTP} disabled={resendLoading} className="text-sm font-medium text-green-600 hover:text-green-700 flex items-center gap-2 transition-colors">
+                      {resendLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <RefreshCw className="h-4 w-4" />} Resend Code
+                    </button>
+                  )}
+
+                  <button type="button" onClick={() => { setStep('credentials'); setPassword(''); setOtp(''); }} className="text-sm text-slate-500 hover:text-slate-900 transition-colors">
+                    &larr; Back to login
+                  </button>
+                </div>
+              </motion.form>
             )}
+          </AnimatePresence>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-[#E67E22] hover:bg-[#c96d1c] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#E67E22] transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : step === 1 ? (
-                <>Continue <ArrowRight className="w-4 h-4" /></>
-              ) : (
-                'Sign In securely'
-              )}
-            </button>
-          </form>
-
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">New to Emara?</span>
-              </div>
-            </div>
-
-            <div className="mt-6 text-center">
-              <Link href="/signup" className="font-bold text-[#E67E22] hover:text-[#c96d1c] transition-colors">
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            <p className="text-sm text-slate-600">
+              New to Emara Coffee?{' '}
+              <Link href="/register" className="font-semibold text-green-600 hover:text-green-700 transition-colors">
                 Create an account
               </Link>
-            </div>
+            </p>
           </div>
         </div>
       </div>
