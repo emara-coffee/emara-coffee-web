@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence , Variants} from 'framer-motion';
 import Link from 'next/link';
 import {
   ArrowRight, Plus, Minus, Send, BarChart3, Globe2, Truck, ShieldCheck,
@@ -114,7 +114,7 @@ const faqs = [
   }
 ];
 
-const fadeUpVariant = {
+const fadeUpVariant: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: {
     opacity: 1,
@@ -123,7 +123,7 @@ const fadeUpVariant = {
   }
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
 };
