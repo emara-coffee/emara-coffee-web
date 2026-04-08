@@ -131,7 +131,7 @@ export default function Footer() {
                   <Mail size={16} className="text-[#4A7C59]" />
                 </div>
                 <div className="flex flex-col mt-1">
-                  <span>opara@sky-swift.com</span>
+                  <span>emarasupplies@gmail.com</span>
                   <span className="text-slate-400 mt-1">emarasupplies@gmail.com</span>
                 </div>
               </li>
