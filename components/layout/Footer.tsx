@@ -126,11 +126,14 @@ export default function Footer() {
                 </div>
                 <span className="leading-relaxed">+254 712 345 678</span>
               </li>
-              <li className="flex items-center gap-3 text-sm group">
+              <li className="flex items-start gap-3 text-sm group">
                 <div className="p-2 bg-white/5 border border-white/10 rounded-lg group-hover:bg-[#4A7C59]/20 group-hover:border-[#4A7C59]/50 transition-colors">
                   <Mail size={16} className="text-[#4A7C59]" />
                 </div>
-                <span>sales@emaracoffee.com</span>
+                <div className="flex flex-col mt-1">
+                  <span>opara@sky-swift.com</span>
+                  <span className="text-slate-400 mt-1">enock.opara8@gmail.com</span>
+                </div>
               </li>
             </ul>
           </div>
