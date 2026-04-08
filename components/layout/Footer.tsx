@@ -124,7 +124,7 @@ export default function Footer() {
                 <div className="p-2 bg-white/5 border border-white/10 rounded-lg group-hover:bg-[#4A7C59]/20 group-hover:border-[#4A7C59]/50 transition-colors">
                   <Phone size={16} className="text-[#4A7C59]" />
                 </div>
-                <span className="leading-relaxed">+254 712 345 678</span>
+                <span className="leading-relaxed">+254 733 555 504</span>
               </li>
               <li className="flex items-start gap-3 text-sm group">
                 <div className="p-2 bg-white/5 border border-white/10 rounded-lg group-hover:bg-[#4A7C59]/20 group-hover:border-[#4A7C59]/50 transition-colors">
